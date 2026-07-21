@@ -1,0 +1,10 @@
+# Mengabaikan file environment
+.env
+
+# Mengabaikan folder log dan file csv
+telemetry_logs/
+*.csv
+
+# Mengabaikan cache Python
+__pycache__/
+*.pyc
