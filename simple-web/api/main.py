@@ -20,6 +20,10 @@ if not BUCKET_NAME:
 
 s3_client = boto3.client('s3')
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"status": "success", "message": "API EC2-S3 Berjalan Normal!"}), 200
+
 @app.route('/api/images', methods=['GET'])
 def get_images():
     """READ: Mengambil daftar gambar dari S3"""
