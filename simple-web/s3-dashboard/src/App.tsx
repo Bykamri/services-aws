@@ -49,9 +49,8 @@ const App: React.FC = () => {
     setIsLoading(true);
     const formData = new FormData();
     
-    // MODIFIKASI KUNCI: Pastikan nama 'file_gambar' di sini SAMA PERSIS 
-    // dengan yang ada di kode Flask backend-mu (misal: request.files['file_gambar'])
-    formData.append('file_gambar', selectedFile);
+    // Nama field harus sama persis dengan Flask backend: request.files['file']
+    formData.append('file', selectedFile);
 
     try {
       // PERHATIAN: Jika Flask-mu membedakan rute untuk POST upload, 
