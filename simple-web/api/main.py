@@ -11,7 +11,8 @@ app = Flask(__name__)
 
 # Mengambil origin dari .env, default '*' jika tidak diset
 CORS_ORIGIN = os.getenv("CORS_ORIGIN", "*")
-CORS(app, resources={r"/api/*": {"origins": CORS_ORIGIN}})
+origins = [o.strip() for o in CORS_ORIGIN.split(",")]
+CORS(app, resources={r"/api/*": {"origins": origins}})
 
 # Wajib ada di .env
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
