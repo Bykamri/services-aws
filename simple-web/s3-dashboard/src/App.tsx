@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-// Sesuaikan API_URL dengan IP EC2-mu (jangan lupa port 5000)
-// Contoh: http://13.212.xx.xx:5000/api/images
+// URL akan otomatis mengambil dari file .env (atau AWS Amplify Environment Variables)
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Tambahkan validasi kecil (opsional tapi disarankan) agar TypeScript tidak protes
 if (!API_URL) {
   console.error("VITE_API_URL belum disetel di file .env!");
 }
@@ -32,7 +30,10 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchImages();
+    // call fetchImages asynchronously to avoid synchronous setState inside effect
+    (async () => {
+      await fetchImages();
+    })();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,23 +48,38 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     const formData = new FormData();
-    formData.append('file', selectedFile);
+    
+    // MODIFIKASI KUNCI: Pastikan nama 'file_gambar' di sini SAMA PERSIS 
+    // dengan yang ada di kode Flask backend-mu (misal: request.files['file_gambar'])
+    formData.append('file_gambar', selectedFile);
 
     try {
+      // PERHATIAN: Jika Flask-mu membedakan rute untuk POST upload, 
+      // kamu bisa mengubah API_URL menjadi `${API_URL}/upload` di bawah ini.
+      // Namun, jika menggunakan arsitektur RESTful murni (POST ke URL yang sama), gunakan API_URL saja.
       const response = await fetch(API_URL, {
         method: 'POST',
-        body: formData,
+        // Tidak perlu menambahkan headers 'Content-Type', 
+        // fetch akan otomatis meraciknya menjadi 'multipart/form-data' jika mendeteksi objek FormData.
+        body: formData, 
       });
+      
       const result = await response.json();
       
       if (result.status === 'success') {
-        setSelectedFile(null); // Reset form
-        fetchImages(); // Refresh tabel setelah berhasil
+        setSelectedFile(null); 
+        fetchImages(); 
+        
+        // Opsional: Reset elemen input file di DOM agar teks nama file yang dipilih ikut hilang
+        const fileInput = document.getElementById('fileUploadInput') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+        
       } else {
         alert('Upload gagal: ' + result.message);
       }
     } catch (error) {
       console.error("Error uploading image:", error);
+      alert('Terjadi kesalahan jaringan. Pastikan backend berjalan dan CORS diizinkan.');
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +96,7 @@ const App: React.FC = () => {
       const result = await response.json();
 
       if (result.status === 'success') {
-        fetchImages(); // Refresh tabel setelah dihapus
+        fetchImages(); 
       } else {
         alert('Gagal menghapus: ' + result.message);
       }
@@ -93,10 +109,14 @@ const App: React.FC = () => {
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h2>S3 Image Dashboard</h2>
       
-      {/* Container Upload */}
       <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
         <form onSubmit={handleUpload} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
+          <input 
+            id="fileUploadInput" // Ditambahkan ID untuk reset elemen
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+          />
           <button 
             type="submit" 
             disabled={!selectedFile || isLoading}
@@ -114,7 +134,6 @@ const App: React.FC = () => {
         </form>
       </div>
 
-      {/* Tabel Data */}
       <table style={{ width: '100%', borderCollapse: 'collapse', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <thead>
           <tr style={{ backgroundColor: '#343a40', color: 'white', textAlign: 'left' }}>
